@@ -87,10 +87,14 @@ namespace sm_analytic.Controllers
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
                 ObjectResult followers = new ObjectResult(user.GetFollowers());
+                ObjectResult mentions = new ObjectResult(user.GetMentionsTimeline());
+                // 
+
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
                     tweetTimeline,
-                    followers
+                    followers,
+                    mentions
                 };
 
                 return Ok(results);
@@ -124,7 +128,6 @@ namespace sm_analytic.Controllers
             }
 
         }
-
  
         /*
          * Function that authorizes our app to use Twitter API vs an individual user

@@ -1,13 +1,11 @@
 .nav {
+  background-color: #f4f4f4;
+  height: 60px;
+  padding: 10px;
+  display: flex;
+  justify-content: flex-end;
 
-    background-color: black;
-    height: 60px;
-    padding: 10px;
-    display: flex;
-    justify-content: flex-end;
-
-    .btn {
-        margin-left: 10px;
-    }
-
+  .btn {
+    margin-left: 10px;
+  }
 }

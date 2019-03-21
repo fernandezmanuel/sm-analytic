@@ -8,6 +8,7 @@ export class TwitterDataService {
   public tweets;
   public userData;
   public followers;
+  public mentions;  
   public updated = new Subject<void>();
 
   constructor(private apiService: ApiService) { }
@@ -54,7 +55,8 @@ export class TwitterDataService {
             this.userData = val[0].value;
             this.tweets = val[1].value;
             this.followers = val[2].value;
-            this.updated.next();
+            this.mentions = val[3].value;
+            this.updated.next(); 
             localStorage.setItem('userData', JSON.stringify(this.userData));
             localStorage.setItem('tweets', JSON.stringify(this.tweets));
           },
