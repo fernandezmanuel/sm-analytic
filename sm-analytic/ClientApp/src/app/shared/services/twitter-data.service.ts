@@ -9,6 +9,8 @@ export class TwitterDataService {
   public userData;
   public followers;
   public mentions;  
+  public hashtagCount;
+  public searchedHashtags;
   public updated = new Subject<void>();
 
   constructor(private apiService: ApiService) { }
@@ -51,15 +53,17 @@ export class TwitterDataService {
       this.apiService.post('ValidateTwitterAuth', requestBody)
         .subscribe(
         val => {
-            console.log(val);
-            this.userData = val[0].value;
-            this.tweets = val[1].value;
-            this.followers = val[2].value;
-            this.mentions = val[3].value;
-            this.updated.next(); 
-            localStorage.setItem('userData', JSON.stringify(this.userData));
-            localStorage.setItem('tweets', JSON.stringify(this.tweets));
-          },
+          console.log(val);
+          this.userData = val[0].value;
+          this.tweets = val[1].value;
+          this.followers = val[2].value;
+          this.mentions = val[3].value;
+          this.hashtagCount = val[4].value;
+          this.searchedHashtags = val[5].value;
+          this.updated.next();
+          localStorage.setItem('userData', JSON.stringify(this.userData));
+          localStorage.setItem('tweets', JSON.stringify(this.tweets));
+        },
           error => {
             console.log(error)
           }

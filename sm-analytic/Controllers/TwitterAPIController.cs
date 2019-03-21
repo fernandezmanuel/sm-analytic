@@ -4,13 +4,9 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.Extensions.Caching.Memory;
-using Tweetinvi.Models.DTO;
 using System.Net.Http;
-using Newtonsoft.Json;
-using System.Text;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using Tweetinvi.Parameters;
 
 namespace sm_analytic.Controllers
 {
@@ -84,17 +80,23 @@ namespace sm_analytic.Controllers
                 var userCreds = AuthFlow.CreateCredentialsFromVerifierCode(credentials.oauth_verifier, _authenticationContext);
                 var user = Tweetinvi.User.GetAuthenticatedUser(userCreds);
 
+                var allHashtagsUsed = CountHashtags(user.GetUserTimeline());
+                var publicPostsWithHashtags = SearchHashtags(allHashtagsUsed);
+
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
                 ObjectResult followers = new ObjectResult(user.GetFollowers());
                 ObjectResult mentions = new ObjectResult(user.GetMentionsTimeline());
-                // 
+                ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
+                ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
 
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
                     tweetTimeline,
                     followers,
-                    mentions
+                    mentions,
+                    hashtagCount,
+                    searchedHashtags
                 };
 
                 return Ok(results);
@@ -106,33 +108,53 @@ namespace sm_analytic.Controllers
             }
         }
 
-
-        [Route("~/api/GetSocialEngagementData")]
-        [HttpPost]
-        public ObjectResult GetSocialEngagementData([FromBody] Credentials credentials)
+        private Dictionary<string, int> CountHashtags(IEnumerable<ITweet> tweets)
         {
 
-            IAuthenticationContext _authenticationContext;
-            _cache.TryGetValue("_authContext", out _authenticationContext);
+            var hashtags = new Dictionary<string, int>();
 
-            try
+            foreach (var tweet in tweets)
             {
-                var userCreds = AuthFlow.CreateCredentialsFromVerifierCode(credentials.oauth_verifier, _authenticationContext);
-                var user = Tweetinvi.User.GetAuthenticatedUser(userCreds);
-                return Ok(user);
+                foreach (var hashtag in tweet.Hashtags)
+                {
+                    int value;
+
+                    if (hashtags.TryGetValue(hashtag.Text, out value)) {
+                        hashtags[hashtag.Text]++;
+                    }
+                    else {
+                        hashtags[hashtag.Text] = 1;
+                    }
+                }  
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Something went wrong: {ex}");
-                return StatusCode(500, "Internal server error: " + ex.Message);
-            }
+
+            return hashtags;
 
         }
- 
-        /*
-         * Function that authorizes our app to use Twitter API vs an individual user
-         * Uses credentials stored in environment variables 
-         */
+
+        private Dictionary<string, int> SearchHashtags(Dictionary<string, int> hashtags) {
+
+            var hashtagCount = new Dictionary<string, int>();
+
+            foreach (KeyValuePair<string, int> hashtag in hashtags)
+            {
+
+                var searchParameter = new SearchTweetsParameters("#" + hashtag.Key);
+
+                searchParameter.Lang = LanguageFilter.English;
+                searchParameter.SearchType = SearchResultType.Popular;
+
+                var tweets = Search.SearchTweets(searchParameter);
+                var tweetAmount = new List<ITweet>(tweets).Count;
+
+                hashtagCount[hashtag.Key] = tweetAmount;
+            
+            }
+
+            return hashtagCount;
+
+        }
+
         private void AuthorizeOurApp()
         {
             Auth.SetUserCredentials(
@@ -147,13 +169,10 @@ namespace sm_analytic.Controllers
          * Model for the user credentials passed into
          * ValidateTwitterAuth()
          */
-        public class Credentials
-        {
+        public class Credentials {
             public string authorization_id { get; set; }
             public string oauth_token { get; set; }
             public string oauth_verifier { get; set; }
         }
     }
 }
-
-
