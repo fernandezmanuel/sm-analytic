@@ -7,6 +7,12 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http;
 using System.Collections.Generic;
 using Tweetinvi.Parameters;
+using System.Threading.Tasks;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
+using Microsoft.Rest;
+using System.Threading;
+
 
 namespace sm_analytic.Controllers
 {
@@ -45,7 +51,7 @@ namespace sm_analytic.Controllers
         public string TwitterAuth()
         {
 
-            AuthorizeOurApp(); 
+            AuthorizeOurApp();
 
             var appCreds = new ConsumerCredentials(
                 Environment.GetEnvironmentVariable("CONSUMER_KEY"),
@@ -57,7 +63,7 @@ namespace sm_analytic.Controllers
             _cache.Set("_authContext", _authenticationContext);
 
             return _authenticationContext.AuthorizationURL;
-           
+
         }
 
         /* After the user logins in/authorises our app through the 
@@ -82,6 +88,7 @@ namespace sm_analytic.Controllers
 
                 var allHashtagsUsed = CountHashtags(user.GetUserTimeline());
                 var publicPostsWithHashtags = SearchHashtags(allHashtagsUsed);
+                var sentimentData = GetSentiment(user.GetMentionsTimeline());
 
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
@@ -89,6 +96,7 @@ namespace sm_analytic.Controllers
                 ObjectResult mentions = new ObjectResult(user.GetMentionsTimeline());
                 ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
                 ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
+                // ObjectResult sentiment = new ObjectResult(sentimentData);
 
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
@@ -97,6 +105,7 @@ namespace sm_analytic.Controllers
                     mentions,
                     hashtagCount,
                     searchedHashtags
+                    // sentiment
                 };
 
                 return Ok(results);
@@ -106,6 +115,79 @@ namespace sm_analytic.Controllers
                 Console.WriteLine($"Something went wrong: {ex}");
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
+        }
+
+        private const string SubscriptionKey = "Put subscription key here!"; // Environment.GetEnvironmentVariable("SUBSCRIPTION_KEY")
+
+        /// </summary>
+        class ApiKeyServiceClientCredentials : ServiceClientCredentials
+        {
+            public override Task ProcessHttpRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                request.Headers.Add("Ocp-Apim-Subscription-Key", SubscriptionKey);
+                return base.ProcessHttpRequestAsync(request, cancellationToken);
+            }
+        }
+
+        private Dictionary<string, double> GetSentiment(IEnumerable<ITweet> mentions)
+        {
+
+            // Create a client.
+            ITextAnalyticsClient client = new TextAnalyticsClient(new ApiKeyServiceClientCredentials())
+            {
+                Endpoint = "https://canadacentral.api.cognitive.microsoft.com"
+
+            }; //Replace 'westus' with the correct region for your Text Analytics subscription
+
+            Console.WriteLine("\n\n===== SENTIMENT ANALYSIS ======");
+
+            List<MultiLanguageInput> rawText = new List<MultiLanguageInput>();
+
+            var i = 0;
+
+            foreach (var mention in mentions)
+            {
+                Console.WriteLine(i + "====" + mention.FullText);
+                MultiLanguageInput text = new MultiLanguageInput("en", i.ToString(), mention.FullText);
+                rawText.Add(text);
+                i++;
+            }
+
+                Console.WriteLine("************************************************************************");
+
+            try
+            {
+
+                SentimentBatchResult result3 = client.SentimentAsync(
+                    new MultiLanguageBatchInput(rawText)).Result;
+
+                foreach (var document in result3.Documents)
+                {
+                    Console.WriteLine($"Document ID: {document.Id} , Sentiment Score: {document.Score:0.00}");
+                }
+
+            } catch(System.AggregateException e)
+            {
+                Console.WriteLine(e);
+            }
+
+
+            // Printing sentiment results
+
+
+            Console.WriteLine("************************************************************************");
+
+            // create empty dictionary
+            // for every mention
+            // send mention to api
+            // add mention and its score to dictionary
+            // return dictionary of scores
+
+            /**
+             * { "@sm_analytic Some text about our app", 123}
+             */
+
+            return new Dictionary<string, double>();
         }
 
         private Dictionary<string, int> CountHashtags(IEnumerable<ITweet> tweets)
