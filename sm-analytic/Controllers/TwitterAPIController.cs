@@ -1,17 +1,17 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
+using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Rest;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Tweetinvi;
 using Tweetinvi.Models;
-using Microsoft.AspNetCore.Cors;
-using Microsoft.Extensions.Caching.Memory;
-using System.Net.Http;
-using System.Collections.Generic;
 using Tweetinvi.Parameters;
-using System.Threading.Tasks;
-using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
-using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
-using Microsoft.Rest;
-using System.Threading;
 
 
 namespace sm_analytic.Controllers
@@ -20,7 +20,7 @@ namespace sm_analytic.Controllers
     /*
      * This controller takes care of the Twitter authentication process
      * For both our application and individual users
-     */ 
+     */
     [ApiController]
     [EnableCors("AllowMyOrigin")]
     public class TwitterAPIController : ControllerBase
@@ -89,13 +89,18 @@ namespace sm_analytic.Controllers
                 var allHashtagsUsed = CountHashtags(user.GetUserTimeline());
                 var publicPostsWithHashtags = SearchHashtags(allHashtagsUsed);
                 var sentimentData = GetSentiment(user.GetMentionsTimeline());
+                var allMentionsUsed = CountMentions(user.GetMentionsTimeline());
+                var allMentionCreators = GetMentionCreatorName(user.GetMentionsTimeline());
 
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
                 ObjectResult followers = new ObjectResult(user.GetFollowers());
                 ObjectResult mentions = new ObjectResult(user.GetMentionsTimeline());
+                ObjectResult mentionsCount = new ObjectResult(user.GetMentionsTimeline());
+                ObjectResult mentionCreatedBy = new ObjectResult(user.GetMentionsTimeline());
                 ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
                 ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
+
                 // ObjectResult sentiment = new ObjectResult(sentimentData);
 
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
@@ -117,7 +122,7 @@ namespace sm_analytic.Controllers
             }
         }
 
-        private const string SubscriptionKey = "Put subscription key here!"; // Environment.GetEnvironmentVariable("SUBSCRIPTION_KEY")
+        private const string SubscriptionKey = "d3cf1a2495c741c19fb8b766494fdb9e"; // Environment.GetEnvironmentVariable("SUBSCRIPTION_KEY")
 
         /// </summary>
         class ApiKeyServiceClientCredentials : ServiceClientCredentials
@@ -144,27 +149,29 @@ namespace sm_analytic.Controllers
             List<MultiLanguageInput> rawText = new List<MultiLanguageInput>();
 
             var i = 0;
+            var rankAvg = 0;
 
             foreach (var mention in mentions)
             {
-                Console.WriteLine(i + "====" + mention.FullText);
+                Console.WriteLine(i + "====" + mention.CreatedBy + "=====" + mention.FullText);
                 MultiLanguageInput text = new MultiLanguageInput("en", i.ToString(), mention.FullText);
                 rawText.Add(text);
                 i++;
             }
 
                 Console.WriteLine("************************************************************************");
-
             try
             {
 
-                SentimentBatchResult result3 = client.SentimentAsync(
-                    new MultiLanguageBatchInput(rawText)).Result;
+                SentimentBatchResult result3 = client.SentimentAsync( new MultiLanguageBatchInput(rawText)).Result;
+
 
                 foreach (var document in result3.Documents)
                 {
-                    Console.WriteLine($"Document ID: {document.Id} , Sentiment Score: {document.Score:0.00}");
+                    var facerank = document.Score * 100;
+                    Console.WriteLine($"Document ID: {document.Id} , Sentiment Score: {facerank:0.00}%");
                 }
+
 
             } catch(System.AggregateException e)
             {
@@ -173,7 +180,6 @@ namespace sm_analytic.Controllers
 
 
             // Printing sentiment results
-
 
             Console.WriteLine("************************************************************************");
 
@@ -187,7 +193,53 @@ namespace sm_analytic.Controllers
              * { "@sm_analytic Some text about our app", 123}
              */
 
+            var sentiment = new Dictionary<string, int>();
+
             return new Dictionary<string, double>();
+        }
+
+        private List<string> GetMentionCreatorName(IEnumerable<ITweet> mentions)
+        {
+            List<string> createdBy = new List<string>();
+
+            Console.WriteLine("\n\n********************************************************************");
+            Console.WriteLine("*****************GETTING MENTION CREATOR NAME***************************");
+
+            foreach (var mention in mentions)
+            {
+                createdBy.Add((mention.CreatedBy).ToString());
+            }
+
+            foreach (var name in createdBy)
+            {
+                Console.WriteLine(name);
+            }
+
+            Console.WriteLine("\n\n********************************************************************");
+
+            return createdBy;
+        }
+
+        private int CountMentions(IEnumerable<ITweet> mentions)
+        {
+            int mention = 0;
+
+            foreach(var count in mentions)
+            {
+                mention++;
+            }
+           
+            Console.WriteLine("\n\n************************************************************************");
+            Console.WriteLine("*******************COUNTING TOTAL NUMBER OF MENTIONS**************************");
+            Console.WriteLine(mention);
+            Console.WriteLine("************************************************************************");
+
+            return mention;
+        }
+
+        private int CalculateOverallSentScore(double )
+        {
+
         }
 
         private Dictionary<string, int> CountHashtags(IEnumerable<ITweet> tweets)
@@ -230,12 +282,11 @@ namespace sm_analytic.Controllers
                 var tweetAmount = new List<ITweet>(tweets).Count;
 
                 hashtagCount[hashtag.Key] = tweetAmount;
-            
             }
-
             return hashtagCount;
-
         }
+
+
 
         private void AuthorizeOurApp()
         {
