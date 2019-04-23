@@ -41,18 +41,29 @@ export class TwitterDataService {
    * if they've successfully been authenticated
    */
   authorizeUser() {
+    var requestBody = {};
+    if (localStorage.getItem("authorization_id") == null) {
+      var queryParams = window.location.search;
 
-    var queryParams = window.location.search;
+      if (queryParams) {
 
-    if (queryParams) {
+        var args = queryParams.split("&");
 
-      var args = queryParams.split("&");
-      var requestBody = {};
+        args.forEach((arg) => {
+          var argPair = arg.split("=");
+          requestBody[argPair[0]] = argPair[1];
 
-      args.forEach((arg) => {
-        var argPair = arg.split("=");
-        requestBody[argPair[0]] = argPair[1];
-      });
+          localStorage.setItem(argPair[0].replace('?', ''), argPair[1]);
+        });
+      }
+    }
+    else {
+      requestBody = {
+        "authorization_id": localStorage.getItem("authorization_id"),
+        "oauth_token": localStorage.getItem("oauth_token"),
+        "oauth_verifier": localStorage.getItem("oauth_verifier")
+      };
+    }
 
       this.apiService.post('ValidateTwitterAuth', requestBody)
         .subscribe(
@@ -70,8 +81,10 @@ export class TwitterDataService {
           this.rank = val[6].value;
           this.mentionCreatedBy = val[8].value;
           this.mentionList = val[7].value;
-
           this.createSentimentObject();
+          this.hashtagCount = val[3].value;
+          this.searchedHashtags = val[4].value;
+          this.mentions = val[5].value;
           this.updated.next();
           localStorage.setItem('userData', JSON.stringify(this.userData));
           localStorage.setItem('tweets', JSON.stringify(this.tweets));
@@ -81,10 +94,8 @@ export class TwitterDataService {
           }
         );
     }
-  }
 
   createSentimentObject() {
-
     let mentions = Object.values(this.mentionList);
     var user = Object.values(this.mentionCreatedBy);
     var score = Object.values(this.rank);
@@ -107,5 +118,17 @@ export class TwitterDataService {
     this.tweets = [];
     this.followers = [];
     window.location.reload();
+  }
+
+  hasData() {
+    return this.userData;
+  }
+
+  hasNoData() {
+    return !this.userData;
+  }
+
+  isAuthorize() {
+
   }
 }

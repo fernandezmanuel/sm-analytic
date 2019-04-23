@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .nav {
   background-color: #f4f4f4;
   height: 60px;
@@ -9,3 +10,52 @@
     margin-left: 10px;
   }
 }
+=======
+.nav {
+  background-color: white;
+  display: flex;
+  box-shadow: 0px 3px 15px rgba(0,0,0,0.2);
+
+  .logo-cont {
+    flex: 1;
+    display: flex;
+    padding-left: 20px;
+
+
+    .logo {
+      margin: 10px 0px 10px 0px;
+      width: 160px;
+      height: 30px;
+    }
+  }
+
+  .links {
+    flex: 4;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-right: 20px;
+
+    h6 {
+      margin-bottom: 0px;
+      margin-right: 20px;
+
+      &:hover {
+        color: grey;
+      }
+    }
+
+    .btn {
+      margin-left: 20px;
+      width: 100px;
+    }
+
+  }
+
+  .greeting {
+    align-items: center;
+    display: flex;
+    margin-left: 10px;
+  }
+}
+>>>>>>> df80d3c0fc7da683e9c57bfe54660d8fdde0947b

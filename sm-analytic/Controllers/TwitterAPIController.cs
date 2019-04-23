@@ -101,8 +101,8 @@ namespace sm_analytic.Controllers
                 ObjectResult mentionCreatedBy = new ObjectResult(allMentionCreators);
                 ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
                 ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
-                ObjectResult mentionList = new ObjectResult(mentList);
-                
+                ObjectResult mentionList = new ObjectResult(mentList);          
+
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
                     tweetTimeline,
@@ -113,6 +113,7 @@ namespace sm_analytic.Controllers
                     sentiment,
                     mentionList,
                     mentionCreatedBy
+                    mentions
                 };
 
                 return Ok(results);
