@@ -8,11 +8,15 @@ export class TwitterDataService {
   public tweets;
   public userData;
   public followers;
-  public mentions;  
+  public mentions;
   public hashtagCount;
   public searchedHashtags;
+  public rank;
+  public mentionList;
+  public sentiment;
   public updated = new Subject<void>();
-
+  public mentionCreatedBy;
+  public counter: number = -1;
   constructor(private apiService: ApiService) { }
 
   ngOnInit() {}
@@ -54,12 +58,20 @@ export class TwitterDataService {
         .subscribe(
         val => {
           console.log(val);
+          // taking array of json objects
+          // and stores them into variables that will be accessed elsewhere in the
+          // application
           this.userData = val[0].value;
           this.tweets = val[1].value;
           this.followers = val[2].value;
           this.mentions = val[3].value;
           this.hashtagCount = val[4].value;
           this.searchedHashtags = val[5].value;
+          this.rank = val[6].value;
+          this.mentionCreatedBy = val[8].value;
+          this.mentionList = val[7].value;
+
+          this.createSentimentObject();
           this.updated.next();
           localStorage.setItem('userData', JSON.stringify(this.userData));
           localStorage.setItem('tweets', JSON.stringify(this.tweets));
@@ -68,10 +80,27 @@ export class TwitterDataService {
             console.log(error)
           }
         );
-
     }
-
   }
+
+  createSentimentObject() {
+
+    let mentions = Object.values(this.mentionList);
+    var user = Object.values(this.mentionCreatedBy);
+    var score = Object.values(this.rank);
+
+    var newSentiment = [];
+    var i = 0;
+
+    for (let i = 0; i < Object.keys(this.mentionList).length; ++i) {
+      newSentiment.push(JSON.stringify({
+        "user": user[i],
+        "mention": mentions[i],
+        "score": score[i]
+      }));
+    }
+    console.log(newSentiment);
+ }
 
   clearSession() {
     this.userData = {};
@@ -79,5 +108,4 @@ export class TwitterDataService {
     this.followers = [];
     window.location.reload();
   }
-
 }

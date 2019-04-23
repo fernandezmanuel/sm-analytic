@@ -88,29 +88,31 @@ namespace sm_analytic.Controllers
 
                 var allHashtagsUsed = CountHashtags(user.GetUserTimeline());
                 var publicPostsWithHashtags = SearchHashtags(allHashtagsUsed);
-                var sentimentData = GetSentiment(user.GetMentionsTimeline());
+                var sentimentData = GetSentimentRank(user.GetMentionsTimeline());
                 var allMentionsUsed = CountMentions(user.GetMentionsTimeline());
                 var allMentionCreators = GetMentionCreatorName(user.GetMentionsTimeline());
+                var mentList = GetSentimentList(user.GetMentionsTimeline());
 
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
                 ObjectResult followers = new ObjectResult(user.GetFollowers());
                 ObjectResult mentions = new ObjectResult(user.GetMentionsTimeline());
-                ObjectResult mentionsCount = new ObjectResult(user.GetMentionsTimeline());
-                ObjectResult mentionCreatedBy = new ObjectResult(user.GetMentionsTimeline());
+                ObjectResult sentiment = new ObjectResult(sentimentData);
+                ObjectResult mentionCreatedBy = new ObjectResult(allMentionCreators);
                 ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
                 ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
-
-                // ObjectResult sentiment = new ObjectResult(sentimentData);
-
+                ObjectResult mentionList = new ObjectResult(mentList);
+                
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
                     tweetTimeline,
                     followers,
                     mentions,
                     hashtagCount,
-                    searchedHashtags
-                    // sentiment
+                    searchedHashtags,
+                    sentiment,
+                    mentionList,
+                    mentionCreatedBy
                 };
 
                 return Ok(results);
@@ -122,7 +124,7 @@ namespace sm_analytic.Controllers
             }
         }
 
-        private const string SubscriptionKey = "d3cf1a2495c741c19fb8b766494fdb9e"; // Environment.GetEnvironmentVariable("SUBSCRIPTION_KEY")
+        private const string SubscriptionKey = "82734afb721d44fd81a2e6cfdb610852"; // Environment.GetEnvironmentVariable("SUBSCRIPTION_KEY")
 
         /// </summary>
         class ApiKeyServiceClientCredentials : ServiceClientCredentials
@@ -134,9 +136,37 @@ namespace sm_analytic.Controllers
             }
         }
 
-        private Dictionary<string, double> GetSentiment(IEnumerable<ITweet> mentions)
+        private Dictionary<int, string> GetSentimentList(IEnumerable<ITweet> mentions)
         {
+            Console.WriteLine("\n\n===== Mentions List ======");
 
+            var ment = new Dictionary<int, string>();
+
+            int i = 0;
+
+            Console.WriteLine("************************************************************************");
+            try
+            {
+
+                foreach (var mention in mentions)
+                {
+                    ment.Add(i, mention.FullText);
+                    i++;
+                }
+            }
+            catch (System.AggregateException e)
+            {
+                Console.WriteLine(e);
+            }
+
+            Console.WriteLine("************************************************************************");
+
+            return ment;
+        }
+
+
+        private Dictionary<string, double> GetSentimentRank(IEnumerable<ITweet> mentions)
+        {
             // Create a client.
             ITextAnalyticsClient client = new TextAnalyticsClient(new ApiKeyServiceClientCredentials())
             {
@@ -148,8 +178,9 @@ namespace sm_analytic.Controllers
 
             List<MultiLanguageInput> rawText = new List<MultiLanguageInput>();
 
+            var sentiment = new Dictionary<string, double>();
+
             var i = 0;
-            var rankAvg = 0;
 
             foreach (var mention in mentions)
             {
@@ -162,40 +193,26 @@ namespace sm_analytic.Controllers
                 Console.WriteLine("************************************************************************");
             try
             {
-
                 SentimentBatchResult result3 = client.SentimentAsync( new MultiLanguageBatchInput(rawText)).Result;
-
-
+   
                 foreach (var document in result3.Documents)
                 {
-                    var facerank = document.Score * 100;
-                    Console.WriteLine($"Document ID: {document.Id} , Sentiment Score: {facerank:0.00}%");
+                        // MultiLanguageInput text = new MultiLanguageInput("en", i.ToString(), mention.FullText);
+                        double facerank = (double)(document.Score * 100);
+                        // var mentionText = mentList[Int32.Parse(document.Id)];
+                        sentiment.Add(document.Id, facerank);
+                        Console.WriteLine($"Document ID: {document.Id} , Sentiment Score: {facerank:0.00}%");
                 }
-
 
             } catch(System.AggregateException e)
             {
                 Console.WriteLine(e);
             }
 
-
             // Printing sentiment results
-
             Console.WriteLine("************************************************************************");
 
-            // create empty dictionary
-            // for every mention
-            // send mention to api
-            // add mention and its score to dictionary
-            // return dictionary of scores
-
-            /**
-             * { "@sm_analytic Some text about our app", 123}
-             */
-
-            var sentiment = new Dictionary<string, int>();
-
-            return new Dictionary<string, double>();
+            return sentiment;
         }
 
         private List<string> GetMentionCreatorName(IEnumerable<ITweet> mentions)
@@ -223,7 +240,6 @@ namespace sm_analytic.Controllers
         private int CountMentions(IEnumerable<ITweet> mentions)
         {
             int mention = 0;
-
             foreach(var count in mentions)
             {
                 mention++;
@@ -237,14 +253,8 @@ namespace sm_analytic.Controllers
             return mention;
         }
 
-        private int CalculateOverallSentScore(double )
-        {
-
-        }
-
         private Dictionary<string, int> CountHashtags(IEnumerable<ITweet> tweets)
         {
-
             var hashtags = new Dictionary<string, int>();
 
             foreach (var tweet in tweets)
@@ -267,12 +277,10 @@ namespace sm_analytic.Controllers
         }
 
         private Dictionary<string, int> SearchHashtags(Dictionary<string, int> hashtags) {
-
             var hashtagCount = new Dictionary<string, int>();
 
             foreach (KeyValuePair<string, int> hashtag in hashtags)
             {
-
                 var searchParameter = new SearchTweetsParameters("#" + hashtag.Key);
 
                 searchParameter.Lang = LanguageFilter.English;
@@ -285,8 +293,6 @@ namespace sm_analytic.Controllers
             }
             return hashtagCount;
         }
-
-
 
         private void AuthorizeOurApp()
         {

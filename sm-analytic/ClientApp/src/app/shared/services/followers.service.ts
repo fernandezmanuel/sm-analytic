@@ -26,13 +26,12 @@ export class FollowersService {
       'chartLabels': Object.values(chartLabels),
       'chartData': chartData
     };
-
   }
 
   /**
    * Determines when each follower made their account
    * Return array of years counting when followers joined
-   **/
+  **/
   joinedAt(followers) {
 
     console.log(followers);
@@ -60,7 +59,6 @@ export class FollowersService {
     return [{
       data: this.yearsToArray(data), label: "Years"
     }];
-
   }
 
   getYear(dateString) {
@@ -76,5 +74,4 @@ export class FollowersService {
     });
     return arr;
   }
-
 }

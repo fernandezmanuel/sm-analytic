@@ -17,8 +17,8 @@ export class SentimentComponent implements OnInit {
 
   constructor(
     private engagementService: EngagementService,
-    private twitterDataService: TwitterDataService) { }
-
+    private twitterDataService: TwitterDataService
+  ) { }
 
 
   ngOnInit() {

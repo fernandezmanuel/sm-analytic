@@ -72,7 +72,6 @@ export class HashtagService {
     });
 
     return hashtags;
-
   }
 
   allHashtagsUsed(tweets) {
