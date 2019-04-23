@@ -84,7 +84,6 @@ export class TwitterDataService {
           this.createSentimentObject();
           this.hashtagCount = val[3].value;
           this.searchedHashtags = val[4].value;
-          this.mentions = val[5].value;
           this.updated.next();
           localStorage.setItem('userData', JSON.stringify(this.userData));
           localStorage.setItem('tweets', JSON.stringify(this.tweets));
