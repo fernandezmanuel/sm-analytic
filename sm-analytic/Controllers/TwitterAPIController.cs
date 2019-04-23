@@ -112,7 +112,7 @@ namespace sm_analytic.Controllers
                     searchedHashtags,
                     sentiment,
                     mentionList,
-                    mentionCreatedBy
+                    mentionCreatedBy,
                     mentions
                 };
 
