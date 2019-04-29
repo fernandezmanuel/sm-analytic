@@ -6,15 +6,26 @@
         <hr>
       </div>
     </div>
+
     <div class="row">
-      <app-base-chart class="col-8"
-                      title="Overall Sentiment"
-                      subTitle="Displays overall sentiment for all mentions including you."
-                      errorMessage="API Service Unavailable"></app-base-chart>
-      <app-base-chart class="col-4"
-                      title="Post Sentiment"
-                      subTitle="Displays sentiment on posts mentioning you."
-                      errorMessage="API Service Unavailable"></app-base-chart>
+      <img style="width:60%;height:60%;padding-bottom:30px;" class="rounded mx-auto d-block" src="../../../assets/img/sent-bar.png" />
+      <div class="card rounded mx-auto d-block">
+        <div class="card-body">
+          <p>Your overall sentiment analysis is:</p><h1>{{ovrSentiment}}</h1>
+        </div>
       </div>
     </div>
+
+
+    <div class="row">
+      <app-tweet-list [title]="'Sentiment on Posts'"
+                      [subTitle]="'Shows user sentiment on a collection of posts. With this feature you can analyze what is the overall feeling that your followers have towards your account, service or product'"
+                      [tweets]="newSentiment">
+      </app-tweet-list>
+
+
+    </div>
+
   </div>
+  </div>
+

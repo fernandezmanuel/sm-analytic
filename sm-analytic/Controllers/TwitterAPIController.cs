@@ -92,6 +92,7 @@ namespace sm_analytic.Controllers
                 var allMentionsUsed = CountMentions(user.GetMentionsTimeline());
                 var allMentionCreators = GetMentionCreatorName(user.GetMentionsTimeline());
                 var mentList = GetSentimentList(user.GetMentionsTimeline());
+                var ovSent = OverallSentiment(user.GetMentionsTimeline());
 
                 ObjectResult userInfo = new ObjectResult(user);
                 ObjectResult tweetTimeline = new ObjectResult(user.GetUserTimeline());
@@ -101,7 +102,8 @@ namespace sm_analytic.Controllers
                 ObjectResult mentionCreatedBy = new ObjectResult(allMentionCreators);
                 ObjectResult hashtagCount = new ObjectResult(allHashtagsUsed);
                 ObjectResult searchedHashtags = new ObjectResult(publicPostsWithHashtags);
-                ObjectResult mentionList = new ObjectResult(mentList);          
+                ObjectResult mentionList = new ObjectResult(mentList);
+                ObjectResult overallSentiment = new ObjectResult(ovSent);
 
                 IEnumerable<ObjectResult> results = new List<ObjectResult>() {
                     userInfo,
@@ -113,7 +115,8 @@ namespace sm_analytic.Controllers
                     sentiment,
                     mentionList,
                     mentionCreatedBy,
-                    mentions
+                    mentions,
+                    overallSentiment
                 };
 
                 return Ok(results);
@@ -145,7 +148,7 @@ namespace sm_analytic.Controllers
 
             int i = 0;
 
-            Console.WriteLine("************************************************************************");
+            //Console.WriteLine("************************************************************************");
             try
             {
 
@@ -160,7 +163,7 @@ namespace sm_analytic.Controllers
                 Console.WriteLine(e);
             }
 
-            Console.WriteLine("************************************************************************");
+            //Console.WriteLine("************************************************************************");
 
             return ment;
         }
@@ -191,7 +194,7 @@ namespace sm_analytic.Controllers
                 i++;
             }
 
-                Console.WriteLine("************************************************************************");
+                //Console.WriteLine("************************************************************************");
             try
             {
                 SentimentBatchResult result3 = client.SentimentAsync( new MultiLanguageBatchInput(rawText)).Result;
@@ -211,7 +214,7 @@ namespace sm_analytic.Controllers
             }
 
             // Printing sentiment results
-            Console.WriteLine("************************************************************************");
+            //Console.WriteLine("************************************************************************");
 
             return sentiment;
         }
@@ -220,8 +223,8 @@ namespace sm_analytic.Controllers
         {
             List<string> createdBy = new List<string>();
 
-            Console.WriteLine("\n\n********************************************************************");
-            Console.WriteLine("*****************GETTING MENTION CREATOR NAME***************************");
+            //Console.WriteLine("\n\n********************************************************************");
+            //Console.WriteLine("*****************GETTING MENTION CREATOR NAME***************************");
 
             foreach (var mention in mentions)
             {
@@ -233,7 +236,7 @@ namespace sm_analytic.Controllers
                 Console.WriteLine(name);
             }
 
-            Console.WriteLine("\n\n********************************************************************");
+            //Console.WriteLine("\n\n********************************************************************");
 
             return createdBy;
         }
@@ -246,10 +249,10 @@ namespace sm_analytic.Controllers
                 mention++;
             }
            
-            Console.WriteLine("\n\n************************************************************************");
-            Console.WriteLine("*******************COUNTING TOTAL NUMBER OF MENTIONS**************************");
-            Console.WriteLine(mention);
-            Console.WriteLine("************************************************************************");
+            //Console.WriteLine("\n\n************************************************************************");
+            //Console.WriteLine("*******************COUNTING TOTAL NUMBER OF MENTIONS**************************");
+            //Console.WriteLine(mention);
+            //Console.WriteLine("************************************************************************");
 
             return mention;
         }
@@ -272,9 +275,59 @@ namespace sm_analytic.Controllers
                     }
                 }  
             }
-
             return hashtags;
+        }
 
+        private double OverallSentiment (IEnumerable<ITweet> mentions)
+        {
+            //Console.WriteLine("********************** OVERALL SENTIMENT ****************************");
+
+            var total = 0.0;
+
+            ITextAnalyticsClient client = new TextAnalyticsClient(new ApiKeyServiceClientCredentials())
+            {
+                Endpoint = "https://canadacentral.api.cognitive.microsoft.com"
+
+            }; 
+
+            List<MultiLanguageInput> rawText = new List<MultiLanguageInput>();
+
+            var i = 0;
+
+            foreach (var mention in mentions)
+            {
+                MultiLanguageInput text = new MultiLanguageInput("en", i.ToString(), mention.FullText);
+                rawText.Add(text);
+                i++;
+            }
+
+            try
+            {
+                SentimentBatchResult result3 = client.SentimentAsync(new MultiLanguageBatchInput(rawText)).Result;
+
+                var count = 0;
+
+                foreach (var document in result3.Documents)
+                {
+                    // MultiLanguageInput text = new MultiLanguageInput("en", i.ToString(), mention.FullText);
+                    double facerank = (double)(document.Score * 100);
+                    total += facerank;
+                    count++;
+                }
+
+                total = total / count;
+
+                Console.WriteLine(total);
+
+                //Console.WriteLine("********************** FINAL ****************************");
+
+            }
+            catch (System.AggregateException e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return total;
         }
 
         private Dictionary<string, int> SearchHashtags(Dictionary<string, int> hashtags) {

@@ -1,12 +1,31 @@
 .page {
-    height: 100%;
-    padding: 25px 50px 20px 50px;
+  height: 100%;
+  padding: 25px 50px 20px 50px;
 
-    hr {
-        border-top: 2px solid rgba(0, 0, 0, 0.1);
-    }
+  hr {
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+  }
 
-    .charts {
-        margin-bottom: 25px;
-    }
+  .charts {
+    margin-bottom: 25px;
+  }
+
+  .card-body {
+    padding-right: 30px;
+    padding-bottom: 30px;
+  }
+
+  .card {
+    margin-bottom: 30px;
+  }
+
+  p {
+    font-size: 20px;
+  }
+
+  h1 {
+    font-size: 110px;
+    color: #43cea2;
+    padding-left: 58px;
+  }
 }

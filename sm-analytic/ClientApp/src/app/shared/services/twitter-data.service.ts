@@ -17,6 +17,8 @@ export class TwitterDataService {
   public updated = new Subject<void>();
   public mentionCreatedBy;
   public counter: number = -1;
+  public newSentiment;
+  public overallSentiment;
   constructor(private apiService: ApiService) { }
 
   ngOnInit() {}
@@ -84,6 +86,7 @@ export class TwitterDataService {
           this.createSentimentObject();
           this.hashtagCount = val[3].value;
           this.searchedHashtags = val[4].value;
+          this.overallSentiment = val[10].value;
           this.updated.next();
           localStorage.setItem('userData', JSON.stringify(this.userData));
           localStorage.setItem('tweets', JSON.stringify(this.tweets));
@@ -99,17 +102,17 @@ export class TwitterDataService {
     var user = Object.values(this.mentionCreatedBy);
     var score = Object.values(this.rank);
 
-    var newSentiment = [];
+    this.newSentiment = [];
     var i = 0;
 
     for (let i = 0; i < Object.keys(this.mentionList).length; ++i) {
-      newSentiment.push(JSON.stringify({
+      this.newSentiment.push({
         "user": user[i],
-        "mention": mentions[i],
-        "score": score[i]
-      }));
+        "text": mentions[i],
+        "score": Math.trunc(Number(score[i]))
+      });
     }
-    console.log(newSentiment);
+    console.log(this.newSentiment);
  }
 
   clearSession() {

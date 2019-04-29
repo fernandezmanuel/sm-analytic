@@ -16,11 +16,12 @@ export class TweetListComponent implements OnInit {
 
   ngOnInit() {
 
+    console.log(this.tweets);
+
     this.header = {
       text: "Tweet",
-      score: "# of Likes"
+      score: "# of Likes/Rank"
     }
-
   }
 
 }
